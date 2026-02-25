@@ -3,667 +3,465 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vault | Moderná Knižnica</title>
+    <title>CineLocal - Your Custom Cinema</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        
         :root {
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --accent: #ef4444;
+            --accent: #ff003c;
+            --bg-dark: #050505;
+            --glass: rgba(15, 15, 15, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
-
+        
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #030303;
-            color: #ffffff;
+            background-color: var(--bg-dark);
+            color: #fff;
+            margin: 0;
             overflow-x: hidden;
-            min-height: 100vh;
         }
 
-        .ambient-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden; pointer-events: none;
-        }
-        .blob {
-            position: absolute; width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, rgba(0,0,0,0) 70%);
-            filter: blur(80px); border-radius: 50%;
-            animation: move 20s infinite alternate;
-        }
-        @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(20%, 20%); } }
-
-        .glass {
-            background: var(--glass);
-            backdrop-filter: blur(24px) saturate(180%);
+        /* --- UI COMPONENTS --- */
+        .movie-card {
+            position: relative;
+            border-radius: 30px;
+            overflow: hidden;
+            background: #0d0d0d;
             border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .glass-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(255, 255, 255, 0.15);
+        .movie-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: var(--accent);
+            box-shadow: 0 30px 60px rgba(255, 0, 60, 0.15);
         }
 
-        .gradient-text {
-            background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
+        #custom-player-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+            border: 1px solid var(--glass-border);
         }
 
-        .accent-gradient {
-            background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
-        }
+        video { width: 100%; height: 100%; object-fit: contain; }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-
-        .nav-link { position: relative; }
-        .nav-link::after {
-            content: ''; position: absolute; bottom: -4px; left: 50%; width: 0; height: 2px;
-            background: var(--accent); transition: all 0.3s ease; transform: translateX(-50%);
-        }
-        .nav-link.active::after { width: 100%; }
-
-        .avatar-option {
-            cursor: pointer; border: 2px solid transparent; transition: all 0.3s;
-        }
-        .avatar-option.selected {
-            border-color: var(--accent); transform: scale(1.1);
-        }
-
-        #video-player-container:fullscreen { width: 100vw; height: 100vh; border-radius: 0; }
-
-        /* DARK INPUT STYLING */
-        input, select, textarea {
-            background: rgba(255, 255, 255, 0.04) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            color: #ffffff !important;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-        input:focus, select:focus, textarea:focus {
-            background: rgba(255, 255, 255, 0.07) !important;
-            border-color: rgba(239, 68, 68, 0.5) !important;
-            outline: none;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
-        }
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.3) !important;
-        }
-
-        /* Custom styling for select options */
-        select option {
-            background: #121212;
-            color: #ffffff;
-        }
-
-        .resume-prompt {
+        .player-controls {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 40;
-            animation: slideIn 0.5s ease-out;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            padding: 40px 30px 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
         }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .ai-glow {
-            animation: ai-glow 2s infinite alternate;
+        #custom-player-container:hover .player-controls { opacity: 1; }
+
+        .progress-container {
+            width: 100%; height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px; cursor: pointer;
         }
-        @keyframes ai-glow {
-            from { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
-            to { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+
+        .progress-bar {
+            height: 100%; background: var(--accent);
+            width: 0%; border-radius: 10px;
         }
+
+        /* --- AUTH & PRICING --- */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .pricing-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .pricing-card:hover {
+            border-color: var(--accent);
+            background: rgba(255, 0, 60, 0.05);
+            transform: scale(1.05);
+        }
+
+        input {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: white !important;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="custom-scrollbar">
+<body>
 
-    <div class="ambient-bg">
-        <div class="blob" style="top: -10%; left: -10%;"></div>
-        <div class="blob" style="bottom: -10%; right: -10%;"></div>
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 z-[500] bg-black flex items-center justify-center p-6">
+        <div class="w-full max-w-md glass-panel p-10 rounded-[40px] shadow-2xl">
+            <div id="auth-header" class="text-center mb-10">
+                <h2 class="text-4xl font-black tracking-tighter mb-2">MY<span class="text-[#ff003c]">CINEMA</span></h2>
+                <p id="auth-subtitle" class="text-gray-400 text-xs uppercase tracking-[0.2em]">Prihlásenie do súkromnej sály</p>
+            </div>
+
+            <div id="login-form" class="space-y-4">
+                <input type="email" id="login-email" placeholder="E-mail" class="w-full p-4 rounded-2xl outline-none focus:border-[#ff003c]">
+                <input type="password" id="login-pass" placeholder="Heslo" class="w-full p-4 rounded-2xl outline-none focus:border-[#ff003c]">
+                <button onclick="handleAuth('login')" class="w-full bg-[#ff003c] py-4 rounded-2xl font-bold uppercase text-xs tracking-widest hover:brightness-110">Vstúpiť</button>
+                <p class="text-center text-gray-500 text-[10px]">Ešte nemáte účet? <span class="text-white cursor-pointer hover:text-[#ff003c]" onclick="toggleAuth(false)">Registrovať sa</span></p>
+            </div>
+
+            <div id="register-form" class="space-y-4 hidden">
+                <input type="text" id="reg-name" placeholder="Celé meno" class="w-full p-4 rounded-2xl outline-none focus:border-[#ff003c]">
+                <input type="email" id="reg-email" placeholder="E-mail" class="w-full p-4 rounded-2xl outline-none focus:border-[#ff003c]">
+                <input type="password" id="reg-pass" placeholder="Heslo" class="w-full p-4 rounded-2xl outline-none focus:border-[#ff003c]">
+                <button onclick="handleAuth('register')" class="w-full bg-[#ff003c] py-4 rounded-2xl font-bold uppercase text-xs tracking-widest">Vytvoriť účet</button>
+                <p class="text-center text-gray-500 text-[10px]">Máte účet? <span class="text-white cursor-pointer hover:text-[#ff003c]" onclick="toggleAuth(true)">Prihlásiť sa</span></p>
+            </div>
+        </div>
     </div>
 
-    <!-- Navigácia -->
-    <nav id="navbar" class="fixed top-0 w-full z-50 px-8 py-5 flex justify-between items-center hidden transition-all duration-500">
-        <div class="flex items-center gap-3 group">
-            <div class="p-2 bg-red-600/20 rounded-xl border border-red-500/30">
-                <i data-lucide="shield-check" class="text-red-500 w-6 h-6"></i>
+    <!-- PRICING SCREEN -->
+    <div id="pricing-screen" class="fixed inset-0 z-[400] bg-black hidden flex flex-col items-center justify-center p-8 overflow-y-auto">
+        <h2 class="text-4xl font-black mb-2">Vyberte si <span class="text-[#ff003c]">svoj plán</span></h2>
+        <p class="text-gray-400 mb-12 text-sm italic">Pre prístup do knižnice si zvoľte jeden z balíčkov.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full">
+            <!-- 6 Balíčkov -->
+            <div onclick="openPayment(2.99, 1)" class="pricing-card glass-panel p-8 rounded-[30px] border border-white/5">
+                <h3 class="font-bold text-xl mb-1">Starter</h3>
+                <p class="text-[#ff003c] font-black text-2xl mb-4">2.99€ <span class="text-xs text-gray-500">/ mesiac</span></p>
+                <ul class="text-[10px] space-y-2 text-gray-400 uppercase tracking-widest">
+                    <li>✓ 1 Mesiac prístupu</li>
+                    <li>✓ HD Kvalita</li>
+                </ul>
             </div>
-            <h1 class="text-2xl font-black tracking-tighter text-white">VAULT</h1>
-        </div>
-        <div class="glass px-8 py-3 rounded-2xl flex items-center gap-6">
-            <button onclick="showSection('home')" id="nav-home" class="nav-link active text-xs font-semibold hover:text-red-400 uppercase tracking-widest">Knižnica</button>
-            <button onclick="showSection('upload')" id="nav-upload" class="nav-link text-xs font-semibold hover:text-red-400 uppercase tracking-widest">Pridať</button>
-            <button onclick="showSection('settings')" id="nav-settings" class="nav-link text-xs font-semibold hover:text-red-400 uppercase tracking-widest">Nastavenia</button>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="text-right">
-                <p id="nav-username" class="text-xs font-bold text-white"></p>
-                <p class="text-[9px] text-gray-500 uppercase">Aktívny profil</p>
+            <div onclick="openPayment(7.99, 3)" class="pricing-card glass-panel p-8 rounded-[30px] border border-[#ff003c]/30 bg-[#ff003c]/5">
+                <div class="bg-[#ff003c] text-[8px] font-black px-2 py-1 rounded absolute -top-2 right-6 uppercase">Populárne</div>
+                <h3 class="font-bold text-xl mb-1">Standard</h3>
+                <p class="text-[#ff003c] font-black text-2xl mb-4">7.99€ <span class="text-xs text-gray-500">/ 3 mesiace</span></p>
+                <ul class="text-[10px] space-y-2 text-gray-400 uppercase tracking-widest">
+                    <li>✓ 3 Mesiace prístupu</li>
+                    <li>✓ 4K Rozlíšenie</li>
+                </ul>
             </div>
-            <img id="nav-avatar" src="" class="w-10 h-10 rounded-xl object-cover glass border border-white/10">
-            <button onclick="logout()" class="p-2.5 glass rounded-xl hover:bg-red-500/20 transition-all ml-2">
-                <i data-lucide="log-out" class="w-4 h-4 text-gray-400"></i>
-            </button>
+            <div onclick="openPayment(24.99, 12)" class="pricing-card glass-panel p-8 rounded-[30px] border border-white/5">
+                <h3 class="font-bold text-xl mb-1">Premium Gold</h3>
+                <p class="text-[#ff003c] font-black text-2xl mb-4">24.99€ <span class="text-xs text-gray-500">/ rok</span></p>
+                <ul class="text-[10px] space-y-2 text-gray-400 uppercase tracking-widest">
+                    <li>✓ 12 Mesiacov prístupu</li>
+                    <li>✓ Offline Podpora</li>
+                </ul>
+            </div>
+            <div onclick="openPayment(5.99, 1)" class="pricing-card glass-panel p-8 rounded-[30px] border border-white/5">
+                <h3 class="font-bold text-xl mb-1">Family Monthly</h3>
+                <p class="text-[#ff003c] font-black text-2xl mb-4">5.99€ <span class="text-xs text-gray-500">/ mesiac</span></p>
+                <ul class="text-[10px] space-y-2 text-gray-400 uppercase tracking-widest">
+                    <li>✓ Pre 5 zariadení</li>
+                    <li>✓ Prioritný Support</li>
+                </ul>
+            </div>
+            <div onclick="openPayment(14.99, 6)" class="pricing-card glass-panel p-8 rounded-[30px] border border-white/5">
+                <h3 class="font-bold text-xl mb-1">CinePass Semi</h3>
+                <p class="text-[#ff003c] font-black text-2xl mb-4">14.99€ <span class="text-xs text-gray-500">/ 6 mesiacov</span></p>
+                <ul class="text-[10px] space-y-2 text-gray-400 uppercase tracking-widest">
+                    <li>✓ 6 Mesiacov prístupu</li>
+                    <li>✓ Bez Obmedzení</li>
+                </ul>
+            </div>
+            <div onclick="openPayment(49.99, 24)" class="pricing-card glass-panel p-8 rounded-[30px] border border-white/5">
+                <h3 class="font-bold text-xl mb-1">Lifetime Preview</h3>
+                <p class="text-[#ff003c] font-black text-2xl mb-4">49.99€ <span class="text-xs text-gray-500">/ 2 roky</span></p>
+                <ul class="text-[10px] space-y-2 text-gray-400 uppercase tracking-widest">
+                    <li>✓ 24 Mesiacov prístupu</li>
+                    <li>✓ VIP Odznaky</li>
+                </ul>
+            </div>
         </div>
-    </nav>
+    </div>
 
-    <!-- AUTH SEKCIA -->
-    <div id="auth-section" class="min-h-screen flex items-center justify-center p-6 relative">
-        <!-- LOGIN FORM -->
-        <div id="login-form" class="w-full max-w-md glass p-10 rounded-[2.5rem] relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-red-600/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="user-check" class="text-red-500 w-8 h-8"></i>
+    <!-- PAYMENT GATEWAY -->
+    <div id="payment-gateway" class="fixed inset-0 z-[600] hidden bg-black/95 flex items-center justify-center p-6">
+        <div class="bg-white text-black w-full max-w-md rounded-[30px] p-8 space-y-6">
+            <div class="flex justify-between items-center">
+                <h4 class="font-black text-2xl tracking-tighter">PLATBA KARTOU</h4>
+                <div class="flex gap-2">
+                    <div class="w-8 h-5 bg-blue-800 rounded"></div>
+                    <div class="w-8 h-5 bg-orange-500 rounded"></div>
                 </div>
-                <h2 class="text-3xl font-black gradient-text">Prihlásenie</h2>
-                <p class="text-gray-500 text-sm mt-1 font-medium">Zadajte prístupové údaje</p>
             </div>
             <div class="space-y-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Nickname</label>
-                    <input type="text" id="login-nick" class="w-full p-4 rounded-2xl outline-none" placeholder="Napíšte nickname">
+                <div class="bg-gray-100 p-4 rounded-xl">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Suma k úhrade</p>
+                    <p id="pay-amount" class="text-2xl font-black">0.00€</p>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Heslo</label>
-                    <input type="password" id="login-pass" class="w-full p-4 rounded-2xl outline-none" placeholder="••••••••">
-                </div>
-                <button onclick="login()" class="w-full accent-gradient py-4 rounded-2xl font-black shadow-xl hover:brightness-110 transition-all mt-4">Vstúpiť do Vaultu</button>
-                <p class="text-center text-xs text-gray-500 pt-4">Ešte nemáš účet? <button onclick="toggleAuth(false)" class="text-white font-bold hover:text-red-500 underline">Vytvoriť profil</button></p>
-            </div>
-        </div>
-
-        <!-- REGISTER FORM -->
-        <div id="register-form" class="w-full max-w-xl glass p-10 rounded-[2.5rem] hidden animate-in fade-in zoom-in-95 duration-500">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-black gradient-text">Nová Identita</h2>
-                <p class="text-gray-500 text-sm mt-1">Zaregistrujte sa a získajte prístup</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Nickname</label>
-                        <input type="text" id="reg-nick" class="w-full p-4 rounded-2xl outline-none" placeholder="Tvoje meno">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Heslo</label>
-                        <input type="password" id="reg-pass" class="w-full p-4 rounded-2xl outline-none" placeholder="Min. 6 znakov">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Potvrdiť Heslo</label>
-                        <input type="password" id="reg-pass-confirm" class="w-full p-4 rounded-2xl outline-none" placeholder="Znova heslo">
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1 block">Vyberte Avatara</label>
-                    <div class="grid grid-cols-3 gap-3" id="avatar-grid"></div>
+                <input type="text" placeholder="Číslo karty" class="w-full p-4 bg-gray-50 border-none rounded-xl text-black !bg-gray-100 !text-black">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="MM/YY" class="p-4 bg-gray-50 rounded-xl !bg-gray-100 !text-black">
+                    <input type="text" placeholder="CVC" class="p-4 bg-gray-50 rounded-xl !bg-gray-100 !text-black">
                 </div>
             </div>
-            <button onclick="register()" class="w-full accent-gradient py-4 rounded-2xl font-black shadow-xl mt-8 hover:brightness-110 transition-all">Dokončiť Registráciu</button>
-            <p class="text-center text-xs text-gray-500 mt-6">Už máš účet? <button onclick="toggleAuth(true)" class="text-white font-bold hover:text-red-500 underline">Prihlásiť sa</button></p>
+            <button onclick="confirmPayment()" class="w-full bg-black text-white py-4 rounded-xl font-bold uppercase text-xs tracking-widest">Zaplatiť teraz</button>
+            <button onclick="closeModal('payment-gateway')" class="w-full text-gray-400 font-bold uppercase text-[10px]">Zrušiť</button>
         </div>
     </div>
 
-    <!-- HLAVNÝ OBSAH -->
-    <main id="app-content" class="hidden pt-32 min-h-screen px-8 pb-20 max-w-[1600px] mx-auto">
-        
-        <section id="section-home" class="space-y-10">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex gap-4 p-1.5 glass rounded-2xl w-fit">
-                    <button onclick="switchTab('movies')" id="tab-movies" class="px-8 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-red-600 shadow-lg">Filmy</button>
-                    <button onclick="switchTab('games')" id="tab-games" class="px-8 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-gray-500 hover:text-white">Hry & Dáta</button>
+    <!-- MAIN APP CONTENT -->
+    <div id="app" class="hidden min-h-screen">
+        <nav class="fixed top-0 w-full z-50 px-8 py-6 flex justify-between items-center backdrop-blur-md border-b border-white/5">
+            <div class="flex items-center gap-6">
+                <div class="text-2xl font-black tracking-tighter">MY<span class="text-[#ff003c]">CINEMA</span></div>
+                <div id="expiry-badge" class="bg-[#ff003c]/20 border border-[#ff003c]/40 text-[#ff003c] px-4 py-1.5 rounded-full text-[9px] font-black uppercase">Expiruje: -</div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="user-display" class="text-xs font-bold text-gray-400">Pripravujem...</span>
+                <button onclick="openModal('modal-upload')" class="bg-[#ff003c] text-white px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-all">Pridať film</button>
+                <button onclick="logout()" class="text-gray-500 hover:text-white"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
+            </div>
+        </nav>
+
+        <header class="pt-40 pb-20 px-10 text-center">
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter mb-4">TVOJ SVET.<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#ff003c] to-orange-500 uppercase">Privátna Sála</span></h1>
+            <p class="text-gray-500 max-w-2xl mx-auto font-light italic">Váš osobný archív je aktívny. Podporujeme formáty: MP4, MKV, AVI, MOV, WEBM.</p>
+        </header>
+
+        <main class="px-10 pb-40">
+            <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
+        </main>
+    </div>
+
+    <!-- MODALS (UPLOAD & PLAYER) -->
+    <div id="modal-upload" class="fixed inset-0 z-[300] hidden bg-black/90 backdrop-blur-xl flex items-center justify-center p-6">
+        <div class="bg-[#111] w-full max-w-lg rounded-[40px] p-10 border border-white/10 shadow-2xl">
+            <h2 class="text-3xl font-black mb-8 tracking-tighter uppercase">Nový kúsok</h2>
+            <div class="space-y-6">
+                <input type="text" id="v-title" placeholder="Názov filmu" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#ff003c]">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center cursor-pointer hover:border-[#ff003c]" onclick="document.getElementById('v-file').click()">
+                        <span class="text-[10px] font-bold text-gray-500 uppercase">Video Súbor</span>
+                        <input type="file" id="v-file" accept="video/*" class="hidden">
+                    </div>
+                    <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center cursor-pointer hover:border-[#ff003c]" onclick="document.getElementById('v-thumb').click()">
+                        <span class="text-[10px] font-bold text-gray-500 uppercase">Poster (JPG)</span>
+                        <input type="file" id="v-thumb" accept="image/*" class="hidden">
+                    </div>
+                </div>
+                <div class="flex gap-4 pt-4">
+                    <button onclick="closeModal('modal-upload')" class="flex-1 text-gray-500 font-bold uppercase text-[10px]">Zrušiť</button>
+                    <button onclick="saveVideo()" class="flex-[2] bg-[#ff003c] py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Uložiť</button>
                 </div>
             </div>
-            <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8"></div>
-            <div id="game-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8"></div>
-            <div id="no-content" class="hidden text-center py-20 opacity-50 font-bold italic">Váš trezor je momentálne prázdny.</div>
-        </section>
+        </div>
+    </div>
 
-        <!-- NASTAVENIA -->
-        <section id="section-settings" class="hidden max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
-            <div class="glass p-12 rounded-[3rem]">
-                <h2 class="text-4xl font-black gradient-text mb-8 text-center">Nastavenia AI</h2>
-                <div class="space-y-6">
-                    <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-4 items-start">
-                        <i data-lucide="zap" class="text-red-500 w-6 h-6 shrink-0"></i>
-                        <p class="text-sm text-gray-300">Vložte <b>Gemini API Key</b> pre aktiváciu legendárneho dabingu. Vaše dáta zostávajú v bezpečí prehliadača.</p>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Váš API Kľúč</label>
-                        <input type="password" id="set-api-key" class="w-full p-4 rounded-2xl outline-none" placeholder="AI-XXXXXXXXXX">
-                    </div>
-                    <button onclick="saveSettings()" class="w-full accent-gradient py-4 rounded-2xl font-black shadow-xl transition-all">Uložiť a Overiť</button>
+    <div id="modal-player" class="fixed inset-0 z-[350] hidden bg-black flex items-center justify-center p-4">
+        <button onclick="closePlayer()" class="absolute top-8 right-8 text-white/50 hover:text-white z-[360]">
+            <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <div id="custom-player-container">
+            <video id="main-video-element" playsinline></video>
+            <div class="player-controls">
+                <div class="progress-container" id="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+                <div class="controls-row flex justify-between items-center">
+                    <button class="text-white hover:text-[#ff003c]" id="play-pause"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                    <div class="text-[11px] font-bold" id="time-display">00:00 / 00:00</div>
+                    <button onclick="document.getElementById('custom-player-container').requestFullscreen()" class="text-white hover:text-[#ff003c]"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
                 </div>
             </div>
-        </section>
-
-        <!-- UPLOAD -->
-        <section id="section-upload" class="hidden max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
-            <div class="glass p-12 rounded-[3rem]">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-4xl font-black gradient-text">Nový Súbor</h2>
-                    <div class="flex gap-2 p-1 glass rounded-2xl">
-                        <button onclick="setUploadType('movie')" id="up-type-movie" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase bg-red-600">Video</button>
-                        <button onclick="setUploadType('game')" id="up-type-game" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase text-gray-500 hover:text-white">Dáta / Hra</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    <div class="space-y-6">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Názov Diela</label>
-                            <input type="text" id="up-title" class="w-full p-4 rounded-2xl outline-none" placeholder="Zadajte názov...">
-                        </div>
-                        <button onclick="handleFileUpload()" id="btn-upload" class="w-full accent-gradient py-5 rounded-2xl font-black shadow-2xl transition-all mt-4">Bezpečne uložiť</button>
-                    </div>
-                    <div class="space-y-6">
-                        <div class="space-y-2">
-                            <label id="file-label-text" class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Súbor</label>
-                            <label for="up-main-file" class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-white/10 rounded-[2rem] cursor-pointer hover:bg-white/5 transition-all">
-                                <i data-lucide="file-up" class="w-8 h-8 text-gray-600 mb-2"></i>
-                                <span id="up-main-label" class="text-xs font-bold text-gray-500 text-center px-4">Kliknite pre výber</span>
-                                <input type="file" id="up-main-file" class="hidden">
-                            </label>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Plagát</label>
-                            <label for="up-thumb" class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-white/10 rounded-[2rem] cursor-pointer hover:bg-white/5 transition-all">
-                                <i data-lucide="image" class="w-8 h-8 text-gray-600 mb-2"></i>
-                                <span id="up-thumb-label" class="text-xs font-bold text-gray-500 text-center px-4">Vybrať náhľad</span>
-                                <input type="file" id="up-thumb" class="hidden" accept="image/*">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- DETAIL -->
-        <section id="section-detail" class="hidden max-w-[1200px] mx-auto space-y-8 animate-in zoom-in-95 duration-500">
-            <button onclick="showSection('home')" class="flex items-center gap-2 text-gray-500 hover:text-white mb-6 font-bold uppercase text-xs tracking-widest group transition-all">
-                <i data-lucide="chevron-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i> Späť do trezoru
-            </button>
-            <div id="video-player-container" class="glass rounded-[2.5rem] overflow-hidden bg-black aspect-video relative shadow-2xl">
-                <video id="main-player" class="w-full h-full object-contain"></video>
-                
-                <!-- AI Engine UI -->
-                <div id="ai-processing-overlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center z-20">
-                    <div class="w-24 h-24 relative mb-6">
-                        <div class="absolute inset-0 border-4 border-red-500/20 rounded-full animate-pulse"></div>
-                        <div class="absolute inset-0 border-4 border-red-500 rounded-full border-t-transparent animate-spin"></div>
-                        <i data-lucide="search" id="ai-icon" class="absolute inset-0 m-auto text-red-500 w-10 h-10 ai-glow"></i>
-                    </div>
-                    <h3 class="text-2xl font-black gradient-text" id="ai-title">Analýza obsahu...</h3>
-                    <p id="ai-status-text" class="text-gray-400 mt-2 text-sm font-bold uppercase tracking-widest text-center px-8 italic">Prebieha identifikácia pôvodných českých hlasov...</p>
-                    <div class="w-64 h-1.5 bg-white/10 rounded-full mt-6 overflow-hidden">
-                        <div id="ai-progress-bar" class="h-full bg-red-600 w-0 transition-all duration-300"></div>
-                    </div>
-                </div>
-
-                <!-- Resume Playback Prompt -->
-                <div id="resume-prompt" class="resume-prompt hidden glass p-5 rounded-2xl border border-white/20 shadow-2xl flex items-center gap-4">
-                    <div class="p-2 bg-red-600/20 rounded-lg"><i data-lucide="clock" class="text-red-500 w-5 h-5"></i></div>
-                    <div>
-                        <p class="text-xs font-bold text-white">Chcete pokračovať od <span id="resume-time-label" class="text-red-500">0:00</span>?</p>
-                        <div class="flex gap-2 mt-3">
-                            <button onclick="resumePlayback()" class="accent-gradient px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Pokračovať</button>
-                            <button onclick="closeResumePrompt()" class="bg-white/5 hover:bg-white/10 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Od začiatku</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="game-detail-container" class="hidden absolute inset-0 bg-black flex flex-col items-center justify-center p-12 text-center">
-                    <img id="detail-thumb-img" src="" class="w-48 h-48 rounded-[2.5rem] object-cover shadow-2xl mb-8 border-4 border-white/5">
-                    <h2 id="detail-game-title" class="text-5xl font-black gradient-text mb-4">Názov</h2>
-                    <button id="btn-download" class="accent-gradient px-12 py-5 rounded-[2rem] font-black flex items-center gap-4 text-xl shadow-2xl transition-all hover:scale-105 active:scale-95">
-                        <i data-lucide="download-cloud" class="w-8 h-8"></i> Stiahnuť Dielo
-                    </button>
-                </div>
-
-                <div class="player-controls absolute inset-0 flex flex-col justify-end p-8 pt-20">
-                    <div class="flex flex-col gap-4">
-                        <input type="range" id="video-progress" class="w-full h-1.5 rounded-full appearance-none bg-white/20" value="0">
-                        <div class="flex items-center justify-between">
-                            <button onclick="togglePlay()" class="hover:scale-110 transition-transform"><i data-lucide="play" id="play-icon" class="w-8 h-8 fill-white"></i></button>
-                            <span id="video-time" class="text-sm font-mono text-gray-300 font-bold">00:00 / 00:00</span>
-                            <button onclick="toggleFullscreen()" class="hover:scale-110 transition-transform"><i data-lucide="maximize" class="w-6 h-6"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex flex-col md:flex-row justify-between items-start gap-10 p-4">
-                <div class="flex-1">
-                    <h2 id="meta-title" class="text-4xl font-black"></h2>
-                    <div class="flex items-center gap-4 mt-6">
-                        <div id="ai-dub-controls" class="flex items-center gap-2 p-1 glass rounded-2xl border border-red-500/20">
-                            <div id="dub-status-new" class="flex items-center gap-2">
-                                <select id="ai-lang-select" class="!bg-transparent !border-none text-[10px] font-black uppercase px-4 py-2 outline-none cursor-pointer">
-                                    <option value="cz">Český legendárny dabing</option>
-                                    <option value="sk">Slovenský AI dabing</option>
-                                </select>
-                                <button onclick="requestRealAIDubbing()" class="accent-gradient px-6 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:brightness-110 transition-all">
-                                    <i data-lucide="zap" class="w-3 h-3"></i> Aktivovať Dabing
-                                </button>
-                            </div>
-                            <div id="dub-status-saved" class="hidden flex items-center gap-2">
-                                <span id="saved-lang-tag" class="px-4 text-[10px] font-black text-green-500 uppercase tracking-widest border-r border-white/10 italic">Dabing Aktívny</span>
-                                <button onclick="playSavedDubbing()" class="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Spustiť Dabing</button>
-                                <button onclick="resetDubbing()" class="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-all" title="Resetovať">
-                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <button onclick="deleteCurrentItem()" class="p-3 bg-red-600/5 hover:bg-red-600/20 text-red-500 border border-red-500/10 rounded-2xl transition-all text-[10px] font-black uppercase flex items-center gap-2">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> Odstrániť z Vaultu
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 glass px-10 py-4 rounded-[2rem] opacity-0 translate-y-10 transition-all duration-500 z-[100] text-sm font-bold text-center border-white/10 shadow-2xl">
-        <span id="toast-msg"></span>
+        </div>
     </div>
 
     <script>
-        const DB_NAME = "VaultGlobalDB";
-        const DB_VERSION = 9; 
         let db;
         let currentUser = null;
-        let currentItem = null;
-        let uploadType = 'movie';
-        let activeTab = 'movies';
-        let selectedAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vault1';
-        let lastAutoSaveTime = 0;
-        let savedDubbingAudio = null;
+        let selectedPlanMonths = 0;
+        const DB_NAME = "CinemaPremium_DB";
 
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'nickname' });
-            if (!db.objectStoreNames.contains('movies')) db.createObjectStore('movies', { keyPath: 'id', autoIncrement: true });
-            if (!db.objectStoreNames.contains('games')) db.createObjectStore('games', { keyPath: 'id', autoIncrement: true });
-        };
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            initAvatarSelection();
-            checkSession();
-            initFileUploadHandlers();
-            loadSettings();
-            lucide.createIcons();
-        };
+        // --- DB INIT ---
+        async function initDB() {
+            return new Promise((resolve) => {
+                const request = indexedDB.open(DB_NAME, 2);
+                request.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains("users")) db.createObjectStore("users", { keyPath: "email" });
+                    if (!db.objectStoreNames.contains("library")) db.createObjectStore("library", { keyPath: "id", autoIncrement: true });
+                };
+                request.onsuccess = e => { db = e.target.result; resolve(); checkSession(); };
+            });
+        }
 
-        const video = document.getElementById('main-player');
-        const progress = document.getElementById('video-progress');
-
-        // --- AUTH ---
+        // --- AUTH LOGIC ---
         function toggleAuth(showLogin) {
             document.getElementById('login-form').classList.toggle('hidden', !showLogin);
             document.getElementById('register-form').classList.toggle('hidden', showLogin);
+            document.getElementById('auth-subtitle').innerText = showLogin ? "Prihlásenie do súkromnej sály" : "Registrácia nového člena";
         }
-        function initAvatarSelection() {
-            const grid = document.getElementById('avatar-grid');
-            grid.innerHTML = "";
-            for(let i=1; i<=6; i++) {
-                const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=Vault${i}`;
-                const img = document.createElement('img');
-                img.src = url;
-                img.className = "avatar-option w-full aspect-square rounded-2xl glass p-1";
-                if(i===1) img.classList.add('selected');
-                img.onclick = () => {
-                    document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-                    img.classList.add('selected');
-                    selectedAvatar = url;
+
+        async function handleAuth(type) {
+            const email = document.getElementById(type === 'login' ? 'login-email' : 'reg-email').value;
+            const pass = document.getElementById(type === 'login' ? 'login-pass' : 'reg-pass').value;
+
+            if (!email || !pass) return alert("Vyplňte údaje!");
+
+            const tx = db.transaction(["users"], "readwrite");
+            const store = tx.objectStore("users");
+
+            if (type === 'register') {
+                const name = document.getElementById('reg-name').value;
+                store.add({ email, pass, name, premiumUntil: null });
+                tx.oncomplete = () => alert("Účet vytvorený! Prihláste sa.");
+            } else {
+                store.get(email).onsuccess = e => {
+                    const user = e.target.result;
+                    if (user && user.pass === pass) {
+                        sessionStorage.setItem('cinema_user', email);
+                        checkSession();
+                    } else alert("Nesprávne údaje!");
                 };
-                grid.appendChild(img);
             }
         }
-        async function register() {
-            const nick = document.getElementById('reg-nick').value.trim();
-            const pass = document.getElementById('reg-pass').value;
-            if (!nick || !pass) return showToast("Prosím, vyplňte všetky údaje!");
-            const tx = db.transaction('users', 'readwrite');
-            const store = tx.objectStore('users');
-            store.add({ nickname: nick, password: pass, avatar: selectedAvatar, createdAt: new Date() });
-            showToast("Registrácia bola úspešná!");
-            toggleAuth(true);
-        }
-        async function login() {
-            const nick = document.getElementById('login-nick').value.trim();
-            const pass = document.getElementById('login-pass').value;
-            const tx = db.transaction('users', 'readonly');
-            tx.objectStore('users').get(nick).onsuccess = (e) => {
-                const user = e.target.result;
-                if (user && user.password === pass) { currentUser = user; localStorage.setItem('vault_session', nick); initApp(); }
-                else showToast("Nesprávne meno alebo heslo!");
-            };
-        }
-        function checkSession() {
-            const saved = localStorage.getItem('vault_session');
-            if (saved) {
-                const tx = db.transaction('users', 'readonly');
-                tx.objectStore('users').get(saved).onsuccess = (e) => { if (e.target.result) { currentUser = e.target.result; initApp(); } };
+
+        async function checkSession() {
+            const email = sessionStorage.getItem('cinema_user');
+            if (!email) {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app').classList.add('hidden');
+                document.getElementById('pricing-screen').classList.add('hidden');
+                return;
             }
-        }
-        function initApp() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('navbar').classList.remove('hidden');
-            document.getElementById('app-content').classList.remove('hidden');
-            document.getElementById('nav-username').innerText = currentUser.nickname;
-            document.getElementById('nav-avatar').src = currentUser.avatar;
-            loadContent();
-        }
-        function logout() { localStorage.removeItem('vault_session'); location.reload(); }
 
-        // --- PLAYER ---
-        video.addEventListener('timeupdate', () => {
-            if (isNaN(video.duration)) return;
-            progress.value = (video.currentTime / video.duration) * 100;
-            document.getElementById('video-time').innerText = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
-            if (Date.now() - lastAutoSaveTime > 5000 && currentItem?.activeStore === 'movies') { saveProgress(); lastAutoSaveTime = Date.now(); }
-        });
-        function saveProgress() {
-            const tx = db.transaction('movies', 'readwrite');
-            currentItem.lastPosition = video.currentTime;
-            tx.objectStore('movies').put(currentItem);
-        }
-        function resumePlayback() { if (currentItem?.lastPosition) { video.currentTime = currentItem.lastPosition; closeResumePrompt(); video.play(); } }
-        function closeResumePrompt() { document.getElementById('resume-prompt').classList.add('hidden'); }
-        function formatTime(s) { const m = Math.floor(s / 60); const sec = Math.floor(s % 60); return (m < 10 ? "0" + m : m) + ":" + (sec < 10 ? "0" + sec : sec); }
-        function togglePlay() { if (video.paused) { video.play(); document.getElementById('play-icon').setAttribute('data-lucide', 'pause'); } else { video.pause(); document.getElementById('play-icon').setAttribute('data-lucide', 'play'); } lucide.createIcons(); }
-        function toggleFullscreen() { const c = document.getElementById('video-player-container'); if (!document.fullscreenElement) c.requestFullscreen(); else document.exitFullscreen(); }
+            db.transaction(["users"], "readonly").objectStore("users").get(email).onsuccess = e => {
+                currentUser = e.target.result;
+                const now = Date.now();
 
-        // --- CONTENT ---
-        function initFileUploadHandlers() {
-            document.getElementById('up-main-file').onchange = (e) => document.getElementById('up-main-label').innerText = e.target.files[0]?.name || "Zvoľ súbor";
-            document.getElementById('up-thumb').onchange = (e) => document.getElementById('up-thumb-label').innerText = e.target.files[0]?.name || "Zvoľ plagát";
-        }
-        function switchTab(tab) {
-            activeTab = tab;
-            document.getElementById('tab-movies').className = tab === 'movies' ? 'px-8 py-2 rounded-xl font-bold text-xs bg-red-600 shadow-lg' : 'px-8 py-2 text-gray-500 font-bold';
-            document.getElementById('tab-games').className = tab === 'games' ? 'px-8 py-2 rounded-xl font-bold text-xs bg-red-600 shadow-lg' : 'px-8 py-2 text-gray-500 font-bold';
-            document.getElementById('movie-grid').classList.toggle('hidden', tab !== 'movies');
-            document.getElementById('game-grid').classList.toggle('hidden', tab !== 'games');
-            loadContent();
-        }
-        function setUploadType(type) {
-            uploadType = type;
-            document.getElementById('up-type-movie').className = type === 'movie' ? 'px-6 py-2 rounded-xl bg-red-600 font-black' : 'px-6 py-2 text-gray-500 font-black';
-            document.getElementById('up-type-game').className = type === 'game' ? 'px-6 py-2 rounded-xl bg-red-600 font-black' : 'px-6 py-2 text-gray-500 font-black';
-        }
-        async function handleFileUpload() {
-            const title = document.getElementById('up-title').value.trim();
-            const main = document.getElementById('up-main-file').files[0];
-            const thumb = document.getElementById('up-thumb').files[0];
-            if (!title || !main || !thumb) return showToast("Prosím, doplňte všetky údaje!");
-            const data = { title, fileBlob: main, thumbBlob: thumb, owner: currentUser.nickname, views: 0, dubbedAudio: null, lastPosition: 0 };
-            const store = uploadType === 'movie' ? 'movies' : 'games';
-            const tx = db.transaction(store, 'readwrite');
-            tx.objectStore(store).add(data);
-            tx.oncomplete = () => { showToast("Súbor bol úspešne pridaný!"); showSection('home'); loadContent(); };
-        }
-        function loadContent() {
-            const grid = document.getElementById(activeTab === 'movies' ? 'movie-grid' : 'game-grid');
-            grid.innerHTML = "";
-            const tx = db.transaction(activeTab, 'readonly');
-            tx.objectStore(activeTab).getAll().onsuccess = (e) => {
-                const items = e.target.result.filter(i => i.owner === currentUser.nickname);
-                document.getElementById('no-content').classList.toggle('hidden', items.length > 0);
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = "glass-card group cursor-pointer relative rounded-[2rem] overflow-hidden";
-                    div.onclick = () => openDetail(item.id, activeTab);
-                    div.innerHTML = `<div class="aspect-[2/3] overflow-hidden"><img src="${URL.createObjectURL(item.thumbBlob)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"></div><div class="p-4"><h4 class="font-black text-xs uppercase truncate">${item.title}</h4></div>`;
-                    grid.appendChild(div);
-                });
-                lucide.createIcons();
-            };
-        }
-        function openDetail(id, store) {
-            const tx = db.transaction(store, 'readwrite');
-            tx.objectStore(store).get(id).onsuccess = (e) => {
-                currentItem = {...e.target.result, activeStore: store};
-                showSection('detail');
-                document.getElementById('meta-title').innerText = currentItem.title;
-                const isMovie = store === 'movies';
-                document.getElementById('main-player').classList.toggle('hidden', !isMovie);
-                document.getElementById('game-detail-container').classList.toggle('hidden', isMovie);
-                if (isMovie) {
-                    video.src = URL.createObjectURL(currentItem.fileBlob);
-                    updateDubbingUI();
-                    if (currentItem.lastPosition > 5) {
-                        document.getElementById('resume-prompt').classList.remove('hidden');
-                        document.getElementById('resume-time-label').innerText = formatTime(currentItem.lastPosition);
-                    } else video.play();
+                if (!currentUser.premiumUntil || currentUser.premiumUntil < now) {
+                    // Predplatné vypršalo alebo nie je
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('pricing-screen').classList.remove('hidden');
                 } else {
-                    document.getElementById('detail-game-title').innerText = currentItem.title;
-                    document.getElementById('detail-thumb-img').src = URL.createObjectURL(currentItem.thumbBlob);
-                    document.getElementById('btn-download').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(currentItem.fileBlob); a.download = currentItem.title; a.click(); };
+                    // Aktívne predplatné
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('pricing-screen').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    document.getElementById('user-display').innerText = currentUser.name;
+                    
+                    const date = new Date(currentUser.premiumUntil);
+                    document.getElementById('expiry-badge').innerText = `Expiruje: ${date.toLocaleDateString()}`;
+                    renderLibrary();
                 }
-                lucide.createIcons();
             };
         }
 
-        async function deleteCurrentItem() {
-            if (!currentItem) return;
-            const tx = db.transaction(currentItem.activeStore, 'readwrite');
-            tx.objectStore(currentItem.activeStore).delete(currentItem.id);
-            tx.oncomplete = () => {
-                showToast("Dielo bolo odstránené.");
-                currentItem = null;
-                showSection('home');
-                loadContent();
-            };
+        function logout() {
+            sessionStorage.removeItem('cinema_user');
+            location.reload();
         }
 
-        // --- AI DUBBING ---
-        async function requestRealAIDubbing() {
-            const apiKey = localStorage.getItem('vault_gemini_key');
-            if (!apiKey) { showToast("Najprv vložte API kľúč v nastaveniach!"); return showSection('settings'); }
-            const lang = document.getElementById('ai-lang-select').value;
-            const overlay = document.getElementById('ai-processing-overlay');
-            const statusText = document.getElementById('ai-status-text');
-            const progressBar = document.getElementById('ai-progress-bar');
-            const icon = document.getElementById('ai-icon');
-            const title = document.getElementById('ai-title');
+        // --- PRICING & PAYMENT ---
+        function openPayment(price, months) {
+            selectedPlanMonths = months;
+            document.getElementById('pay-amount').innerText = price + "€";
+            document.getElementById('payment-gateway').classList.remove('hidden');
+        }
+
+        async function confirmPayment() {
+            const now = Date.now();
+            const future = now + (selectedPlanMonths * 30 * 24 * 60 * 60 * 1000);
             
-            overlay.classList.remove('hidden');
-            video.pause();
-
-            try {
-                icon.setAttribute('data-lucide', 'search'); title.innerText = "Vyhľadávanie histórie...";
-                statusText.innerText = lang === 'cz' ? "Vyhľadávam legendárnych českých dabérov k tomuto filmu..." : "Príprava slovenského dabingu...";
-                progressBar.style.width = "40%";
-                lucide.createIcons();
-                await new Promise(r => setTimeout(r, 2000));
-
-                icon.setAttribute('data-lucide', 'cpu'); title.innerText = "Spracovanie AI modelom...";
-                statusText.innerText = lang === 'cz' ? "Identifikácia hlasov a preberanie štýlu obsadenia..." : "Generovanie hlasu...";
-                progressBar.style.width = "80%";
-                lucide.createIcons();
-
-                const prompt = lang === 'cz' 
-                    ? `Představ si, že jsi profesionální český dabér. Vyhledej v paměti nejznámější české hlasy k filmu ${currentItem.title}. Napodob jejich styl a intonaci. Řekni nadšeně: Vítejte ve Vaultu. Právě sledujete klasiku ${currentItem.title} s legendárním českým dabingem, který jsme pro vás právě našli.`
-                    : `Povedz dramatickým hlasom v slovenčine: Vitajte vo Vaulte. Práve sledujete film ${currentItem.title} s naozajstným slovenským AI dabingom.`;
-
-                const audioBlob = await callGeminiTTS(prompt, "Zephyr", apiKey);
-                const tx = db.transaction('movies', 'readwrite');
-                currentItem.dubbedAudio = audioBlob;
-                currentItem.dubbedLang = lang;
-                tx.objectStore('movies').put(currentItem);
-
-                tx.oncomplete = () => { overlay.classList.add('hidden'); updateDubbingUI(); playSavedDubbing(); };
-            } catch (err) { overlay.classList.add('hidden'); showToast("Chyba Gemini API!"); }
+            currentUser.premiumUntil = future;
+            
+            const tx = db.transaction(["users"], "readwrite");
+            tx.objectStore("users").put(currentUser);
+            tx.oncomplete = () => {
+                alert("Platba úspešná! Vitajte späť.");
+                closeModal('payment-gateway');
+                checkSession();
+            };
         }
 
-        async function callGeminiTTS(text, voice, key) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } })
-            });
-            const data = await res.json();
-            const pcm = atob(data.candidates[0].content.parts[0].inlineData.data);
-            const rate = parseInt(data.candidates[0].content.parts[0].inlineData.mimeType.split('rate=')[1]) || 24000;
-            return pcmToWav(pcm, rate);
+        // --- LIBRARY LOGIC ---
+        async function saveVideo() {
+            const title = document.getElementById('v-title').value;
+            const videoFile = document.getElementById('v-file').files[0];
+            const thumbFile = document.getElementById('v-thumb').files[0];
+
+            if (!title || !videoFile) return;
+
+            let thumbData = "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=800";
+            if (thumbFile) {
+                thumbData = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = () => r(reader.result);
+                    reader.readAsDataURL(thumbFile);
+                });
+            }
+
+            const tx = db.transaction(["library"], "readwrite");
+            tx.objectStore("library").add({ title, videoBlob: videoFile, thumbnail: thumbData, userEmail: currentUser.email });
+            tx.oncomplete = () => {
+                closeModal('modal-upload');
+                renderLibrary();
+            };
         }
 
-        function pcmToWav(rawPcm, rate) {
-            const buffer = new ArrayBuffer(44 + rawPcm.length);
-            const view = new DataView(buffer);
-            const write = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-            write(0, 'RIFF'); view.setUint32(4, 36 + rawPcm.length, true); write(8, 'WAVE'); write(12, 'fmt ');
-            view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-            view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true);
-            view.setUint16(32, 2, true); view.setUint16(34, 16, true); write(36, 'data'); view.setUint32(40, rawPcm.length, true);
-            for (let i = 0; i < rawPcm.length; i++) view.setUint8(44 + i, rawPcm.charCodeAt(i));
-            return new Blob([buffer], { type: 'audio/wav' });
+        function renderLibrary() {
+            const grid = document.getElementById('video-grid');
+            grid.innerHTML = "";
+            db.transaction(["library"], "readonly").objectStore("library").getAll().onsuccess = e => {
+                e.target.result.filter(v => v.userEmail === currentUser.email).forEach(v => {
+                    const card = document.createElement('div');
+                    card.className = "movie-card group cursor-pointer";
+                    card.innerHTML = `
+                        <div class="aspect-[2/3] relative overflow-hidden">
+                            <img src="${v.thumbnail}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent flex flex-col justify-end p-6">
+                                <h3 class="text-xl font-bold mb-4 translate-y-2 group-hover:translate-y-0 transition-all">${v.title}</h3>
+                                <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                    <button onclick="playMovie(${v.id})" class="bg-white text-black px-4 py-2 rounded-xl text-[10px] font-bold uppercase">Prehrať</button>
+                                    <button onclick="deleteMovie(${v.id})" class="bg-white/10 text-white p-2 rounded-xl hover:bg-[#ff003c]">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            };
         }
 
-        function playSavedDubbing() {
-            if (savedDubbingAudio) savedDubbingAudio.pause();
-            savedDubbingAudio = new Audio(URL.createObjectURL(currentItem.dubbedAudio));
-            savedDubbingAudio.play();
-            video.play();
+        // --- PLAYER CONTROLS ---
+        const video = document.getElementById('main-video-element');
+        function playMovie(id) {
+            db.transaction(["library"], "readonly").objectStore("library").get(id).onsuccess = e => {
+                const url = URL.createObjectURL(e.target.result.videoBlob);
+                video.src = url;
+                document.getElementById('modal-player').classList.remove('hidden');
+                video.play();
+            };
         }
 
-        function updateDubbingUI() {
-            const hasDub = !!currentItem.dubbedAudio;
-            document.getElementById('dub-status-new').classList.toggle('hidden', hasDub);
-            document.getElementById('dub-status-saved').classList.toggle('hidden', !hasDub);
-            if(currentItem.dubbedLang) document.getElementById('saved-lang-tag').innerText = currentItem.dubbedLang === 'sk' ? 'Slovensky AI' : 'Česky Profi';
-        }
+        function closePlayer() { video.pause(); video.src = ""; document.getElementById('modal-player').classList.add('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
-        function resetDubbing() {
-            const tx = db.transaction('movies', 'readwrite');
-            currentItem.dubbedAudio = null; tx.objectStore('movies').put(currentItem);
-            tx.oncomplete = () => { updateDubbingUI(); showToast("Dabing bol resetovaný."); };
-        }
+        document.getElementById('play-pause').onclick = () => video.paused ? video.play() : video.pause();
+        video.ontimeupdate = () => {
+            const p = (video.currentTime / video.duration) * 100;
+            document.getElementById('progress-bar').style.width = p + '%';
+        };
 
-        function showSection(name) {
-            ['home', 'upload', 'detail', 'settings'].forEach(s => {
-                document.getElementById('section-' + s).classList.add('hidden');
-                document.getElementById('nav-' + s)?.classList.remove('active');
-            });
-            document.getElementById('section-' + name).classList.remove('hidden');
-            document.getElementById('nav-' + name)?.classList.add('active');
-            if (name !== 'detail') { video.pause(); video.src = ""; if(savedDubbingAudio) savedDubbingAudio.pause(); }
-            window.scrollTo(0, 0);
-        }
-        function saveSettings() { localStorage.setItem('vault_gemini_key', document.getElementById('set-api-key').value.trim()); showToast("Nastavenia boli uložené!"); }
-        function loadSettings() { const key = localStorage.getItem('vault_gemini_key'); if (key) document.getElementById('set-api-key').value = key; }
-        function showToast(m) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = m; t.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-10'), 3000); }
+        window.onload = initDB;
     </script>
 </body>
 </html>
